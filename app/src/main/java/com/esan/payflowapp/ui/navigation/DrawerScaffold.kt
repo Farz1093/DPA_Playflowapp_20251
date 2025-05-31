@@ -54,6 +54,46 @@ fun DrawerScaffold(
                         scope.launch { drawerState.close() }
                     }
                 )
+                NavigationDrawerItem(
+                    label = { Text("Depósito") },
+                    selected = false,
+                    onClick = {
+                        navController.navigate("deposit")
+                        scope.launch { drawerState.close() }
+                    }
+                )
+                NavigationDrawerItem(
+                    label = { Text("Validación de depósito") },
+                    selected = false,
+                    onClick = {
+                        navController.navigate("deposit-validation")
+                        scope.launch { drawerState.close() }
+                    }
+                )
+                NavigationDrawerItem(
+                    label = { Text("Retiro") },
+                    selected = false,
+                    onClick = {
+                        navController.navigate("withdraw")
+                        scope.launch { drawerState.close() }
+                    }
+                )
+                NavigationDrawerItem(
+                    label = { Text("Historial de Transacciones") },
+                    selected = false,
+                    onClick = {
+                        navController.navigate("transactions-history")
+                        scope.launch { drawerState.close() }
+                    }
+                )
+                NavigationDrawerItem(
+                    label = { Text("Reporte de Transacciones") },
+                    selected = false,
+                    onClick = {
+                        navController.navigate("transactions-report")
+                        scope.launch { drawerState.close() }
+                    }
+                )
 
             }
         }

@@ -23,5 +23,32 @@ fun AppNavigation() {
                 HomeScreen()
             }
         }
+        composable("deposit") {
+            DrawerScaffold(title = "Depósito", navController = navController) {
+                DepositScreen()
+            }
+        }
+        //SOLO ADMIN
+        composable("deposit-validation") {
+            DrawerScaffold(title = "Validación de depósito", navController = navController) {
+                DepositValidationScreen()
+            }
+        }
+        composable("withdraw") {
+            DrawerScaffold(title = "Retiro", navController = navController) {
+                WithdrawScreen()
+            }
+        }
+        composable("transactions-history") {
+            DrawerScaffold(title = "Historial de Transacciones", navController = navController) {
+                TransactionsHistoryScreen()
+            }
+        }
+        //SOLO ADMIN
+        composable("transactions-report") {
+            DrawerScaffold(title = "Reporte de Transacciones", navController = navController) {
+                TransactionsReportScreen()
+            }
+        }
     }
 }
