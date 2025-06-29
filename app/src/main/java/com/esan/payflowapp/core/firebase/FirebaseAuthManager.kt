@@ -21,12 +21,13 @@ object FirebaseAuthManager {
         }
     }
 
-    suspend fun getUserData(): Pair<String, Boolean> {
+    suspend fun getUserData(): Triple<String, Double, Boolean> {
         var uid = auth.currentUser?.uid.orEmpty()
         var snapshot = db.collection("user_data").document(uid).get().await()
         val name = snapshot.getString("name").orEmpty()
         val isAdmin = snapshot.getBoolean("is_admin") ?: false
-        return Pair(name, isAdmin)
+        val balance = snapshot.getDouble("balance") ?: 0.0
+        return Triple(name, balance, isAdmin)
     }
 
     suspend fun logoutUser() {
