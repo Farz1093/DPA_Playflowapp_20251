@@ -36,9 +36,11 @@ class LoginViewModel : ViewModel() {
             val result = FirebaseAuthManager.loginUser(email, password)
             if (result.isSuccess) {
                 //VALIDATE USER DATA
-                val pair = FirebaseAuthManager.getUserData()
-                SharedPreferencesManager.saveName(context, pair.first)
-                SharedPreferencesManager.saveIsAdmin(context, pair.second)
+                val profile = FirebaseAuthManager.getUserProfile()
+                SharedPreferencesManager.saveName(context, profile.name)
+                SharedPreferencesManager.saveIsAdmin(context, profile.role == "ADMIN")
+                SharedPreferencesManager.saveEmail(context, profile.email)
+                SharedPreferencesManager.saveCreatedAt(context, profile.createdAt)
                 _state.postValue(LoginState.Success)
             } else {
                 _state.postValue(LoginState.Fail(result.exceptionOrNull()?.localizedMessage.orEmpty()))

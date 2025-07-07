@@ -9,8 +9,9 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read:  if isUser(userId);
-      allow write: if false;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow read:   if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow update: if isAdmin();
     }
 
     match /transactions/{tid} {

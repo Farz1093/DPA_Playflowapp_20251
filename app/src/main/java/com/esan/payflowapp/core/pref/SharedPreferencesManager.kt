@@ -5,37 +5,47 @@ import androidx.core.content.edit
 
 object SharedPreferencesManager {
 
+    private const val PREFS_NAME = "user_prefs"
+
     fun saveName(context: Context, value: String) {
-        val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-        sharedPref.edit {
-            putString("name", value)
-            apply()
-        }
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit { putString("name", value) }
+    }
+
+    fun saveEmail(context: Context, value: String) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit { putString("email", value) }
     }
 
     fun saveIsAdmin(context: Context, value: Boolean) {
-        val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-        sharedPref.edit {
-            putBoolean("is_admin", value)
-            apply()
-        }
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit { putBoolean("is_admin", value) }
     }
 
-    fun getName(context: Context): String {
-        val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-        return sharedPref.getString("name", null).orEmpty()
+    fun saveCreatedAt(context: Context, value: Long) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit { putLong("created_at", value) }
     }
 
-    fun isAdmin(context: Context): Boolean {
-        val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-        return sharedPref.getBoolean("is_admin", false)
-    }
+    fun getName(context: Context): String =
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getString("name", "").orEmpty()
+
+    fun getEmail(context: Context): String =
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getString("email", "").orEmpty()
+
+    fun isAdmin(context: Context): Boolean =
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getBoolean("is_admin", false)
+
+    fun getCreatedAt(context: Context): Long =
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getLong("created_at", 0L)
+
     fun clearData(context: Context) {
-        val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-        sharedPref.edit {
-            clear()
-            apply()
-        }
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit { clear() }
     }
 
 }

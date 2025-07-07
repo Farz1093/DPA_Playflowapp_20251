@@ -1,6 +1,7 @@
 package com.esan.payflowapp.core.firebase
 
 import android.annotation.SuppressLint
+import com.esan.payflowapp.core.firebase.models.UserProfile
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -21,12 +22,19 @@ object FirebaseAuthManager {
         }
     }
 
-    suspend fun getUserData(): Pair<String, Boolean> {
-        var uid = auth.currentUser?.uid.orEmpty()
-        var snapshot = db.collection("user_data").document(uid).get().await()
-        val name = snapshot.getString("name").orEmpty()
-        val isAdmin = snapshot.getBoolean("is_admin") ?: false
-        return Pair(name, isAdmin)
+    suspend fun getUserProfile(): UserProfile {
+        val uid = auth.currentUser!!.uid
+        val snap = db
+            .collection("users")
+            .document(uid)
+            .get()
+            .await()
+
+        // Mapea directamente a tu data class
+        val profile = snap.toObject(UserProfile::class.java)
+            ?: throw IllegalStateException("Perfil de usuario sin datos")
+
+        return profile
     }
 
     suspend fun logoutUser() {
