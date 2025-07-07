@@ -13,37 +13,34 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.esan.payflowapp.data.local.entities.TransactionEntity
 
 @Composable
-fun TransactionRowView(modifier: Modifier = Modifier) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(
-            modifier = Modifier.padding(10.dp)
-        ) {
-            Row {
-                Text("Monto:")
-                Spacer(Modifier.width(5.dp))
-                Text("S/ 500.00", fontWeight = FontWeight.Bold)
-            }
-            Row {
-                Text("Tipo de transacción:")
-                Spacer(Modifier.width(5.dp))
-                Text("Retiro", fontWeight = FontWeight.Bold)
-            }
-            Row {
-                Text("Fecha y hora:")
-                Spacer(Modifier.width(5.dp))
-                Text("20/05/2025 14:00:00", fontWeight = FontWeight.Bold)
-            }
-        }
-        HorizontalDivider()
+fun TransactionRowView(tx: TransactionEntity) {
+
+    Row(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+        Text(tx.type, modifier = Modifier.weight(1f))
+        Text("S/ ${tx.amount}", modifier = Modifier.weight(1f))
+        Text(tx.status, modifier = Modifier.weight(1f))
     }
 }
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun TransactionRowView_Preview(modifier: Modifier = Modifier) {
-    TransactionRowView()
+    val fakeTx = TransactionEntity(
+        id        = "tx1",
+        userId    = "user1",
+        type      = "DEPOSIT",
+        amount    = 150000L,
+        status    = "PENDING",
+        createdAt = System.currentTimeMillis(),
+        currency     = "PEN",
+        receiptUrl   = null,
+        description  = "Depósito de prueba",
+        updatedAt    = null,
+        validatedBy  = null,
+        validatedAt  = null
+    )
+    TransactionRowView(tx = fakeTx)
 }

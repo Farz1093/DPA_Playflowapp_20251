@@ -14,24 +14,29 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.esan.payflowapp.data.local.entities.TransactionEntity
 import com.esan.payflowapp.ui.views.TransactionRowView
 
 @Composable
 fun TransactionsReportScreen(modifier: Modifier = Modifier) {
-    Box {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
-        ) {
-            Spacer(Modifier.height(25.dp))
-            LazyColumn {
-                items(count = 10) {
-                    TransactionRowView()
-                }
-            }
+    LazyColumn(modifier) {
+        items(count = 10) { index ->
+            // Crea un TransactionEntity de ejemplo
+            val fakeTx = TransactionEntity(
+                id        = "tx$index",
+                userId    = "user1",
+                type      = if (index % 2 == 0) "DEPOSIT" else "WITHDRAW",
+                amount    = 1000L * (index + 1),
+                status    = if (index % 3 == 0) "PENDING" else "COMPLETED",
+                createdAt = System.currentTimeMillis(),
+                currency     = "PEN",
+                receiptUrl   = null,
+                description  = "Reporte prueba",
+                updatedAt    = null,
+                validatedBy  = null,
+                validatedAt  = null,
+            )
+            TransactionRowView(tx = fakeTx)
         }
     }
 }

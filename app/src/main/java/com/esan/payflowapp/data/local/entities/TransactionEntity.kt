@@ -22,14 +22,16 @@ import androidx.room.PrimaryKey
 data class TransactionEntity (
     @PrimaryKey val id: String,
     val userId: String,
-    val type: String,       // "DEPOSIT" | "WITHDRAW"
-    val amount: Double,
-    val currency: String,
-    val status: String,     // "PENDING","APPROVED",…
-    val receiptUrl: String?,
-    val description: String?,
+    val type: String,
+    val amount: Long,
+    val status: String,
     val createdAt: Long,
-    val updatedAt: Long,
-    val validatedBy: String?,
-    val validatedAt: Long?
+
+    // the new ones with defaults:
+    val currency: String           = "PEN",
+    val receiptUrl: String?        = null,
+    val description: String?       = null,
+    val updatedAt: Long?           = null,
+    val validatedBy: String?       = null,
+    val validatedAt: Long?         = null,
 )

@@ -25,7 +25,9 @@ fun AppNavigation() {
         }
         composable("deposit") {
             DrawerScaffold(title = "Depósito", navController = navController) {
-                DepositScreen()
+                DepositScreen(
+                    navBack = { navController.popBackStack() }  // ← aquí
+                )
             }
         }
         //SOLO ADMIN

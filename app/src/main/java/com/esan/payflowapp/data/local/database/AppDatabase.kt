@@ -13,7 +13,7 @@ import com.esan.payflowapp.data.local.entities.*
         NotificationEntity::class,
         SyncMetadata::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
