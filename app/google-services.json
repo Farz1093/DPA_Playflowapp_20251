@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "320689123447",
-    "project_id": "esan-mobile-final",
-    "storage_bucket": "esan-mobile-final.firebasestorage.app"
+    "project_number": "407614482824",
+    "project_id": "payflowapp-d570b",
+    "storage_bucket": "payflowapp-d570b.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:320689123447:android:2cd69a25af65ff992c9672",
+        "mobilesdk_app_id": "1:407614482824:android:b7dd78404d90da6833323d",
         "android_client_info": {
           "package_name": "com.esan.payflowapp"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCMaRGEkviTGh8d5ho4qaoMF33-Fa2LEjo"
+          "current_key": "AIzaSyCHMCM1c9ZcbB0VQCS7WS_00dY2qjGh4rQ"
         }
       ],
       "services": {

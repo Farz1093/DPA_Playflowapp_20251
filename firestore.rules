@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function auth()       { return request.auth != null; }
+    function isUser(id)   { return auth() && request.auth.uid == id; }
+    function isAdmin()    {
+      return auth()
+          && get(/databases/$(db)/documents/users/$(request.auth.uid)).data.role == "ADMIN";
+    }
+
+    match /users/{userId} {
+      allow read:  if isUser(userId);
+      allow write: if false;
+    }
+
+    match /transactions/{tid} {
+      allow create: if auth() && request.resource.data.userId == request.auth.uid;
+      allow read:   if isUser(resource.data.userId) || isAdmin();
+      allow update: if isAdmin()
+                   || (isUser(resource.data.userId)
+                       && resource.data.status == "PENDING"
+                       && request.resource.data.status == "COMPLETED");
+      allow delete: if false;
+    }
+
+    match /pendingDeposits/{pd} {
+      allow read, update: if isAdmin();
+      allow create:       if false;
+    }
+
+    match /notifications/{nid} {
+      allow read, update: if auth() && resource.data.userId == request.auth.uid;
+      allow create:       if false;
+    }
+  }
+}
