@@ -40,7 +40,7 @@ import androidx.compose.foundation.lazy.items
 fun HomeScreen(
     // Creamos repositorios usando tu singleton de Room y el repo de usuario
     txRepo: TransactionRepository = remember {
-        TransactionRepository(PayFlowApplication.database.transactionDao())
+        TransactionRepository()
     },
     userRepo: UserRepository = remember { UserRepository() },
     // Obtenemos aquí el ViewModel con la factory

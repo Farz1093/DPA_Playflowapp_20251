@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.util.UUID
+import com.google.firebase.Timestamp
 
 class DepositViewModel(
     private val repo: TransactionRepository
@@ -45,7 +46,8 @@ class DepositViewModel(
                     type       = "DEPOSIT",
                     amount     = amt,
                     status     = "PENDING",
-                    createdAt  = System.currentTimeMillis()
+                    createdAt  = System.currentTimeMillis(),
+                    timestamp = Timestamp.now()
                 )
                 repo.deposit(tx)
                 _error.value = null

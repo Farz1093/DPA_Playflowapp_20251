@@ -155,6 +155,25 @@ fun DrawerScaffold(
                         }
                     )
                 }
+                if (isAdmin) {
+                    NavigationDrawerItem(
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Filled.AccountBox,
+                                contentDescription = "Usuarios"
+                            )
+                        },
+                        label = { Text("Usuarios") },
+                        selected = false,
+                        onClick = {
+                            navController.navigate("admin/users") {
+                                // opcional: limpia el back stack o evita duplicados
+                                launchSingleTop = true
+                            }
+                            scope.launch { drawerState.close() }
+                        }
+                    )
+                }
                 NavigationDrawerItem(
                     icon = {
                         Icon(

@@ -5,42 +5,68 @@ import com.esan.payflowapp.data.local.dao.TransactionDao
 import com.esan.payflowapp.data.local.entities.TransactionEntity
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.tasks.await
 
 
 class TransactionRepository(
-    private val txDao: TransactionDao,
+
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
-    /** Flujo de las últimas N transacciones locales */
-    fun getRecentTransactions(userId: String, limit: Long = 10): Flow<List<TransactionEntity>> =
-        txDao.getByUserPaged(userId, limit)
 
-    /** Calcula el saldo sumando income − outcome (puedes implementarlo en Room con @Query) */
-    fun getBalance(userId: String): Flow<Long> =
-        txDao.getBalance(userId)
 
     /** Crea un depósito local y Firestore lo recogerá por el SyncWorker */
-    suspend fun deposit(tx: TransactionEntity) = withContext(Dispatchers.IO) {
-        txDao.upsert(tx.copy(status = "PENDING", createdAt = System.currentTimeMillis()))
-    }
+    suspend fun deposit(tx: TransactionEntity): Result<Unit> {
+        return try {
+            val uid = FirebaseAuthManager.getCurrentUserUid()!!
 
-    /** Crea un retiro local (valida saldo en ViewModel antes) */
-    suspend fun withdraw(tx: TransactionEntity) = withContext(Dispatchers.IO) {
-        txDao.upsert(tx.copy(status = "COMPLETED", createdAt = System.currentTimeMillis()))
-    }
+            // Prepara timestamps
+            val now = System.currentTimeMillis()
+            val data = tx.copy(
+                userId    = uid,
+                createdAt = now,
+                updatedAt = now
+            )
 
-    // Opcional: método para forzar un push inmediato a Firestore
-    suspend fun pushPending() = withContext(Dispatchers.IO) {
-        val userId = FirebaseAuthManager.getCurrentUserUid()!!
-        val pending = txDao.getPendingOnce(userId)
-        pending.forEach { doc ->
+            // Escribe en Firestore
             firestore.collection("transactions")
-                .document(doc.id)
-                .set(doc)
+                .document(data.id)
+                .set(data)   // Firestore mapea automáticamente el data class
                 .await()
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
+
+
+
+    suspend fun validateTransaction(
+        txId: String,
+        approve: Boolean
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val uid = FirebaseAuthManager.getCurrentUserUid()
+                ?: throw IllegalStateException("Usuario no autenticado")
+            val newStatus = if (approve) "COMPLETED" else "FAILED"
+            val now = System.currentTimeMillis()
+            firestore.collection("transactions")
+                .document(txId)
+                .update(
+                    mapOf(
+                        "status"      to newStatus,
+                        "validatedBy" to uid,
+                        "validatedAt" to now
+                    )
+                )
+                .await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+
+
 }

@@ -44,7 +44,7 @@ import com.esan.payflowapp.ui.viewmodel.DepositViewModelFactory
 @Composable
 fun DepositScreen(
     navBack: ()->Unit,
-    repo: TransactionRepository = remember { TransactionRepository(PayFlowApplication.database.transactionDao()) },
+    repo: TransactionRepository = remember { TransactionRepository() },
     vm: DepositViewModel = viewModel(factory = DepositViewModelFactory(repo))
 ) {
     val amount   by vm.amount.collectAsState()

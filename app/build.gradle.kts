@@ -74,4 +74,17 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("androidx.work:work-runtime-ktx:2.8.1")
+
+    // Coil Compose para cargar imágenes
+    implementation("io.coil-kt:coil-compose:2.4.0")
+
+    // Lottie para animaciones
+    implementation("com.airbnb.android:lottie-compose:6.0.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
+
+    implementation(libs.androidx.material.icons.extended)
+    //implementation("androidx.compose.material3:material3-icons-extended")
+    implementation("androidx.compose.material:material-icons-extended:1.5.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+
 }

@@ -27,11 +27,17 @@ interface TransactionDao {
     fun getByUserPaged(userId: String, limit: Long): Flow<List<TransactionEntity>>
 
     @Query("""
-      SELECT SUM(
-        CASE WHEN type = 'DEPOSIT' THEN amount 
-             WHEN type = 'WITHDRAW' THEN -amount 
-             ELSE 0 END
-      ) FROM TransactionEntity
+      SELECT 
+        COALESCE(
+          SUM(
+            CASE WHEN type = 'DEPOSIT' THEN amount
+                 WHEN type = 'WITHDRAW' THEN -amount
+                 ELSE 0
+            END
+          ),
+          0
+        )
+      FROM TransactionEntity
       WHERE userId = :userId
     """)
     fun getBalance(userId: String): Flow<Long>
@@ -42,4 +48,11 @@ interface TransactionDao {
         AND status   = 'PENDING'
     """)
     suspend fun getPendingOnce(userId: String): List<TransactionEntity>
+
+    @Query("""
+      SELECT * FROM TransactionEntity
+      WHERE status = 'PENDING'
+        AND userId = :uid
+    """)
+    suspend fun getPendingByUser(uid: String): List<TransactionEntity>
 }

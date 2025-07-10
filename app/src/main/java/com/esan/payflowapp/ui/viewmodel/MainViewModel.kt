@@ -9,6 +9,7 @@ import com.esan.payflowapp.data.repository.TransactionRepository
 import com.esan.payflowapp.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class MainViewModel(
@@ -24,14 +25,9 @@ class MainViewModel(
 
     init {
         val uid = FirebaseAuthManager.getCurrentUserUid()!!
-        viewModelScope.launch {
-            txRepo.getBalance(uid).collect { _balance.value = it }
-        }
-        viewModelScope.launch {
-            txRepo.getRecentTransactions(uid).collect { _recentTxs.value = it }
-        }
-    }
 
+
+    }
 }
 
 class MainViewModelFactory(
