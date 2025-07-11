@@ -1,6 +1,7 @@
 package com.esan.payflowapp.ui.viewmodel
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -10,14 +11,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.esan.payflowapp.core.firebase.FirebaseAuthManager
+import com.esan.payflowapp.core.firebase.model.Transaction
 import com.esan.payflowapp.core.pref.SharedPreferencesManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class HomeViewModel : ViewModel() {
 
-    private var _trxList = MutableLiveData<List<String>>(emptyList())
-    val trxList: LiveData<List<String>> get() = _trxList
+    private var _trxList = MutableLiveData<List<Transaction>>(emptyList())
+    val trxList: LiveData<List<Transaction>> get() = _trxList
 
     private var _balance = MutableLiveData<Double>()
     val balance: LiveData<Double> get() = _balance
@@ -35,8 +37,14 @@ class HomeViewModel : ViewModel() {
         _balance.postValue(triple.second)
     }
 
-    private fun loadList() {
-        //TO BE CONTINUE
+    private fun loadList() = viewModelScope.launch(Dispatchers.IO) {
+        runCatching {
+            val list = FirebaseAuthManager.getLastTrx()
+            Log.e("WAA", "list=${list.size}")
+            _trxList.postValue(FirebaseAuthManager.getLastTrx())
+        }.onFailure {
+            it.printStackTrace()
+        }
     }
 
 }

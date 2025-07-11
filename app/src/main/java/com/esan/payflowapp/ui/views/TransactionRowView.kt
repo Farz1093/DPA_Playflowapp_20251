@@ -13,9 +13,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.esan.payflowapp.core.firebase.model.Transaction
+import com.esan.payflowapp.core.utils.toReadableDate
+import com.esan.payflowapp.core.utils.toTwoDecimal
 
 @Composable
-fun TransactionRowView(modifier: Modifier = Modifier) {
+fun TransactionRowView(transaction: Transaction) {
     Column(
         modifier = Modifier.fillMaxWidth(),
     ) {
@@ -25,25 +28,32 @@ fun TransactionRowView(modifier: Modifier = Modifier) {
             Row {
                 Text("Monto:")
                 Spacer(Modifier.width(5.dp))
-                Text("S/ 500.00", fontWeight = FontWeight.Bold)
+                Text("S/ ${transaction.amount.toTwoDecimal()}", fontWeight = FontWeight.Bold)
             }
             Row {
                 Text("Tipo de transacción:")
                 Spacer(Modifier.width(5.dp))
-                Text("Retiro", fontWeight = FontWeight.Bold)
+                Text(transaction.getTrxType(), fontWeight = FontWeight.Bold)
+            }
+            if (transaction.isDeposit()) {
+                Row {
+                    Text("Estado:")
+                    Spacer(Modifier.width(5.dp))
+                    Text(transaction.getDepositStatus(), fontWeight = FontWeight.Bold)
+                }
             }
             Row {
                 Text("Fecha y hora:")
                 Spacer(Modifier.width(5.dp))
-                Text("20/05/2025 14:00:00", fontWeight = FontWeight.Bold)
+                Text(transaction.date.toReadableDate(), fontWeight = FontWeight.Bold)
             }
         }
         HorizontalDivider()
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun TransactionRowView_Preview(modifier: Modifier = Modifier) {
-    TransactionRowView()
-}
+//@Preview(showBackground = true, showSystemUi = true)
+//@Composable
+//fun TransactionRowView_Preview(modifier: Modifier = Modifier) {
+//    TransactionRowView()
+//}

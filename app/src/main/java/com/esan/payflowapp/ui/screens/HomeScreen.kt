@@ -12,14 +12,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -31,7 +30,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.esan.payflowapp.R
-import com.esan.payflowapp.core.pref.SharedPreferencesManager
 import com.esan.payflowapp.core.utils.toTwoDecimal
 import com.esan.payflowapp.ui.viewmodel.HomeViewModel
 import com.esan.payflowapp.ui.viewmodel.HomeViewModelFactory
@@ -43,6 +41,7 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     val balance by viewModel.balance.observeAsState(0.0)
+    val trxList by viewModel.trxList.observeAsState(emptyList())
 
     LaunchedEffect(Unit) {
         viewModel.getUserData(context)
@@ -98,8 +97,8 @@ fun HomeScreen(
             }
             Spacer(Modifier.height(10.dp))
             LazyColumn {
-                items(count = 5) {
-                    TransactionRowView()
+                items(trxList) { trx ->
+                    TransactionRowView(trx)
                 }
             }
         }
