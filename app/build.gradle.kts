@@ -68,5 +68,6 @@ dependencies {
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.androidx.runtime.livedata)
 
+    implementation(libs.coil.compose.v260)
 
 }
