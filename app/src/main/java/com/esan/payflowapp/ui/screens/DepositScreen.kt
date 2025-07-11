@@ -169,13 +169,12 @@ fun DepositScreen(
                     Text("Realizar depósito")
                 }
             }
-
             if (state == DepositViewModel.DepositState.Loading) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(Color.White)
-                        .alpha(0.5f)
+                        .alpha(0.25f)
                 ) {
                     CircularProgressIndicator(
                         modifier = Modifier

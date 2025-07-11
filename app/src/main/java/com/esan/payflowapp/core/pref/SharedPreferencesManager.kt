@@ -13,6 +13,14 @@ object SharedPreferencesManager {
         }
     }
 
+    fun saveAccountNumber(context: Context, value: String) {
+        val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        sharedPref.edit {
+            putString("account_number", value)
+            apply()
+        }
+    }
+
     fun saveBalance(context: Context, value: Double) {
         val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
         sharedPref.edit {
@@ -32,6 +40,11 @@ object SharedPreferencesManager {
     fun getName(context: Context): String {
         val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
         return sharedPref.getString("name", null).orEmpty()
+    }
+
+    fun getAccountNumber(context: Context): String {
+        val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        return sharedPref.getString("account_number", null).orEmpty()
     }
 
     fun getBalance(context: Context): Double {

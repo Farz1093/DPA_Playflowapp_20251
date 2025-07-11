@@ -3,6 +3,7 @@ package com.esan.payflowapp.core.firebase
 import android.annotation.SuppressLint
 import android.util.Log
 import com.esan.payflowapp.core.firebase.model.Transaction
+import com.esan.payflowapp.core.firebase.model.UserData
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -25,13 +26,14 @@ object FirebaseAuthManager {
         }
     }
 
-    suspend fun getUserData(): Triple<String, Double, Boolean> {
+    suspend fun getUserData(): UserData {
         var uid = auth.currentUser?.uid.orEmpty()
         var snapshot = db.collection("user_data").document(uid).get().await()
         val name = snapshot.getString("name").orEmpty()
+        val accountNumber = snapshot.getString("account_number").orEmpty()
         val isAdmin = snapshot.getBoolean("is_admin") ?: false
         val balance = snapshot.getDouble("balance") ?: 0.0
-        return Triple(name, balance, isAdmin)
+        return UserData(name, accountNumber, isAdmin, balance)
     }
 
     suspend fun transferMoney(
@@ -100,22 +102,9 @@ object FirebaseAuthManager {
     suspend fun createDeposit(
         amount: Double
     ): Boolean {
-        val userDoc = db.collection("user_data").document(getCurrentUserUid()).get().await()
-        val balance = userDoc.getDouble("balance") ?: 0.0
-        if (amount > balance) throw Exception("Saldo insuficiente.")
         if (amount <= 0) throw Exception("El monto debe ser mayor a 0.")
 
         db.runTransaction { transaction ->
-            val userSnapshot =
-                transaction.get(db.collection("user_data").document(getCurrentUserUid()))
-            val nuevoBalance = (userSnapshot.getDouble("balance") ?: 0.0) - amount
-            if (nuevoBalance < 0) throw Exception("Saldo insuficiente en el momento de la transacción")
-            transaction.update(
-                db.collection("user_data").document(getCurrentUserUid()),
-                "balance",
-                nuevoBalance
-            )
-
             val depositReference = db.collection("deposit_data").document()
             transaction.set(
                 depositReference, mapOf(
