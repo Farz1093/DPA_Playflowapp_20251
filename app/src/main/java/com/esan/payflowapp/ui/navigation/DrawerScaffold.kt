@@ -118,10 +118,10 @@ fun DrawerScaffold(
                             contentDescription = "Menu"
                         )
                     },
-                    label = { Text("Retiro") },
+                    label = { Text("Transferencia") },
                     selected = false,
                     onClick = {
-                        navController.navigate("withdraw")
+                        navController.navigate("transfer")
                         scope.launch { drawerState.close() }
                     }
                 )

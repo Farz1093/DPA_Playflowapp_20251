@@ -10,7 +10,7 @@ import com.esan.payflowapp.ui.screens.HomeScreen
 import com.esan.payflowapp.ui.screens.LoginScreen
 import com.esan.payflowapp.ui.screens.TransactionsHistoryScreen
 import com.esan.payflowapp.ui.screens.TransactionsReportScreen
-import com.esan.payflowapp.ui.screens.WithdrawScreen
+import com.esan.payflowapp.ui.screens.TransferScreen
 
 @Composable
 fun AppNavigation() {
@@ -34,9 +34,9 @@ fun AppNavigation() {
                 DepositValidationScreen()
             }
         }
-        composable("withdraw") {
-            DrawerScaffold(title = "Retiro", navController = navController) {
-                WithdrawScreen()
+        composable("transfer") {
+            DrawerScaffold(title = "Transferir", navController = navController) {
+                TransferScreen()
             }
         }
         composable("transactions-history") {

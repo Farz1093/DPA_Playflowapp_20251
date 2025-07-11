@@ -39,11 +39,11 @@ fun TransactionsHistoryScreen(modifier: Modifier = Modifier) {
             verticalArrangement = Arrangement.Top
         ) {
             Spacer(Modifier.height(25.dp))
-            LazyColumn {
-                items(count = 10) {
-                    TransactionRowView()
-                }
-            }
+//            LazyColumn {
+//                items(count = 10) {
+//                    TransactionRowView()
+//                }
+//            }
         }
     }
 }

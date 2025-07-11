@@ -13,6 +13,14 @@ object SharedPreferencesManager {
         }
     }
 
+    fun saveBalance(context: Context, value: Double) {
+        val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        sharedPref.edit {
+            putLong("balance", value.toLong())
+            apply()
+        }
+    }
+
     fun saveIsAdmin(context: Context, value: Boolean) {
         val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
         sharedPref.edit {
@@ -24,6 +32,11 @@ object SharedPreferencesManager {
     fun getName(context: Context): String {
         val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
         return sharedPref.getString("name", null).orEmpty()
+    }
+
+    fun getBalance(context: Context): Double {
+        val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        return sharedPref.getLong("balance", 0).toDouble()
     }
 
     fun isAdmin(context: Context): Boolean {
