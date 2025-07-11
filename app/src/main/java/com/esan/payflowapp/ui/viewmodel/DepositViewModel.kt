@@ -27,12 +27,13 @@ class DepositViewModel : ViewModel() {
 
     fun getData(context: Context) = viewModelScope.launch(Dispatchers.IO) {
         runCatching {
-            val triple = FirebaseAuthManager.getUserData()
-            SharedPreferencesManager.saveName(context, triple.first)
-            SharedPreferencesManager.saveBalance(context, triple.second)
-            SharedPreferencesManager.saveIsAdmin(context, triple.third)
+            val user = FirebaseAuthManager.getUserData()
+            SharedPreferencesManager.saveName(context, user.name)
+            SharedPreferencesManager.saveAccountNumber(context, user.accountNumber)
+            SharedPreferencesManager.saveBalance(context, user.balance)
+            SharedPreferencesManager.saveIsAdmin(context, user.isAdmin)
 
-            _balance.postValue(triple.second)
+            _balance.postValue(user.balance)
         }.onFailure {
             it.printStackTrace()
         }

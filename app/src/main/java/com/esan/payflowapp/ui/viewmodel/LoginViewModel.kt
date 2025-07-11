@@ -35,11 +35,12 @@ class LoginViewModel : ViewModel() {
         try {
             val result = FirebaseAuthManager.loginUser(email, password)
             if (result.isSuccess) {
-                //VALIDATE USER DATA
-                val triple = FirebaseAuthManager.getUserData()
-                SharedPreferencesManager.saveName(context, triple.first)
-                SharedPreferencesManager.saveBalance(context, triple.second)
-                SharedPreferencesManager.saveIsAdmin(context, triple.third)
+                val user = FirebaseAuthManager.getUserData()
+                SharedPreferencesManager.saveName(context, user.name)
+                SharedPreferencesManager.saveAccountNumber(context, user.accountNumber)
+                SharedPreferencesManager.saveBalance(context, user.balance)
+                SharedPreferencesManager.saveIsAdmin(context, user.isAdmin)
+
                 _state.postValue(LoginState.Success)
             } else {
                 _state.postValue(LoginState.Fail(result.exceptionOrNull()?.localizedMessage.orEmpty()))

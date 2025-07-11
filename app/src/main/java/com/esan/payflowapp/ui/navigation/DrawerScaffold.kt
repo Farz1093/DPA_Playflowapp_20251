@@ -52,6 +52,7 @@ fun DrawerScaffold(
     val context = LocalContext.current
 
     val name by remember { mutableStateOf(SharedPreferencesManager.getName(context)) }
+    val accountNumber by remember { mutableStateOf(SharedPreferencesManager.getAccountNumber(context)) }
     val isAdmin by remember { mutableStateOf(SharedPreferencesManager.isAdmin(context)) }
 
     //ModalNavigationDrawer
@@ -64,6 +65,13 @@ fun DrawerScaffold(
                     modifier = Modifier.padding(horizontal = 15.dp),
                     text = "Hola, $name"
                 )
+                if (!isAdmin) {
+                    Spacer(modifier = Modifier.padding(6.dp))
+                    Text(
+                        modifier = Modifier.padding(horizontal = 15.dp),
+                        text = "Número de cuenta: $accountNumber"
+                    )
+                }
                 Spacer(modifier = Modifier.padding(12.dp))
                 HorizontalDivider()
                 //Home navigation
