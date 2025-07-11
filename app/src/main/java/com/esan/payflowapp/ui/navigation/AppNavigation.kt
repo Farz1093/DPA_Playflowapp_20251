@@ -36,7 +36,7 @@ fun AppNavigation() {
         }
         composable("transfer") {
             DrawerScaffold(title = "Transferir", navController = navController) {
-                TransferScreen()
+                TransferScreen(navController = navController)
             }
         }
         composable("transactions-history") {
