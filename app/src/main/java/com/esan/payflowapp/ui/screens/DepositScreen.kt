@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -58,10 +59,10 @@ fun DepositScreen(
     viewModel: DepositViewModel = viewModel(factory = DepositViewModelFactory())
 ) {
     val context = LocalContext.current
+    val keyboard = LocalSoftwareKeyboardController.current
     val balance by viewModel.balance.observeAsState(0.0)
     val state by viewModel.state.observeAsState()
 
-    var destinyAccount by remember { mutableStateOf("") }
     var depositAmount by remember { mutableStateOf("") }
     var selectedPhoto by remember { mutableStateOf<Uri?>(null) }
 
@@ -121,21 +122,6 @@ fun DepositScreen(
                 Spacer(Modifier.height(15.dp))
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),
-                    value = destinyAccount,
-                    onValueChange = {
-                        destinyAccount = it
-                    },
-                    maxLines = 1,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number
-                    ),
-                    placeholder = {
-                        Text("Ingrese el número de cuenta")
-                    }
-                )
-                Spacer(Modifier.height(15.dp))
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
                     value = depositAmount,
                     onValueChange = {
                         depositAmount = it
@@ -176,28 +162,27 @@ fun DepositScreen(
                 Button(
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {
-                        viewModel.createDeposit(
-                            destinyAccount = destinyAccount,
-                            amount = depositAmount.toDoubleOrNull() ?: 0.0
-                        )
+                        keyboard?.hide()
+                        viewModel.createDeposit(amount = depositAmount.toDoubleOrNull() ?: 0.0)
                     }
                 ) {
                     Text("Realizar depósito")
                 }
             }
-        }
-        if (state == DepositViewModel.DepositState.Loading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.White)
-                    .alpha(0.5f)
-            ) {
-                CircularProgressIndicator(
+
+            if (state == DepositViewModel.DepositState.Loading) {
+                Box(
                     modifier = Modifier
-                        .padding(25.dp)
-                        .align(Alignment.Center)
-                )
+                        .fillMaxSize()
+                        .background(Color.White)
+                        .alpha(0.5f)
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .padding(25.dp)
+                            .align(Alignment.Center)
+                    )
+                }
             }
         }
     }

@@ -34,64 +34,76 @@ object FirebaseAuthManager {
         return Triple(name, balance, isAdmin)
     }
 
-    suspend fun transferMoney(toUID: String, amount: Double): Result<String> {
-        val fromUid = auth.currentUser?.uid.orEmpty()
-        val fromRef = db.collection("user_data").document(fromUid)
+    suspend fun transferMoney(
+        accountNumberDestiny: String,
+        amount: Double
+    ): Boolean {
+        val fromUID = getCurrentUserUid()
+        if (amount <= 0) throw Exception("El monto debe ser mayor a 0.")
+
+        val fromRef = db.collection("user_data").document(fromUID)
+        val fromSnapshot = fromRef.get().await()
+//        if (!fromSnapshot.exists()) throw Exception("Usuario origen no encontrado.")
+
+        val isAdminFrom = fromSnapshot.getBoolean("is_admin") ?: false
+        if (isAdminFrom) throw Exception("Admins no pueden transferir")
+
+        val destinyQuery = db.collection("user_data")
+            .whereEqualTo("account_number", accountNumberDestiny)
+            .limit(1)
+            .get()
+            .await()
+
+        if (destinyQuery.isEmpty) throw Exception("No existe usuario con esa cuenta.")
+
+        val toSnapshot = destinyQuery.documents[0]
+        val toUID = toSnapshot.id
+
+        if (fromUID == toUID) throw Exception("No puedes transferirte a ti mismo.")
+
+        val isAdminTo = toSnapshot.getBoolean("is_admin") ?: false
+        if (isAdminTo) throw Exception("No puedes transferir a un usuario administrador.")
+
+        val fromName = fromSnapshot.getString("name") ?: ""
+        val toName = toSnapshot.getString("name") ?: ""
+
         val toRef = db.collection("user_data").document(toUID)
 
         db.runTransaction { transaction ->
-            val fromSnapshot = transaction.get(fromRef)
-            val toSnapshot = transaction.get(toRef)
+            val liveFromSnap = transaction.get(fromRef)
+            val liveToSnap = transaction.get(toRef)
 
-            val fromBalance = fromSnapshot.getDouble("balance") ?: 0.0
-            val isAdmin = fromSnapshot.getBoolean("is_admin") ?: false
-            if (isAdmin) throw Exception("Admins no pueden transferir")
+            val fromBalance = liveFromSnap.getDouble("balance") ?: 0.0
+            val toBalance = liveToSnap.getDouble("balance") ?: 0.0
+
             if (fromBalance < amount) throw Exception("Saldo insuficiente")
 
-            // Actualiza saldos
             transaction.update(fromRef, "balance", fromBalance - amount)
-            val toBalance = toSnapshot.getDouble("balance") ?: 0.0
             transaction.update(toRef, "balance", toBalance + amount)
 
-            // Agrega registro a trx_data
-            val fromName = fromSnapshot.getString("name") ?: ""
-            val toName = toSnapshot.getString("name") ?: ""
             val trxRef = db.collection("trx_data").document()
             transaction.set(
                 trxRef, mapOf(
-                    "from_uid" to fromUid,
+                    "from_uid" to fromUID,
                     "from_name" to fromName,
                     "to_uid" to toUID,
                     "to_name" to toName,
                     "amount" to amount,
-                    "date" to System.currentTimeMillis()
+                    "date" to com.google.firebase.Timestamp.now()
                 )
             )
-        }.let {
-            return Result.success("Transferencia realizada")
-        }
+        }.await()
+
+        return true
     }
 
     suspend fun createDeposit(
-        destinyAccount: String,
         amount: Double
     ): Boolean {
         val userDoc = db.collection("user_data").document(getCurrentUserUid()).get().await()
         val balance = userDoc.getDouble("balance") ?: 0.0
         if (amount > balance) throw Exception("Saldo insuficiente.")
         if (amount <= 0) throw Exception("El monto debe ser mayor a 0.")
-
-        val query = db.collection("user_data")
-            .whereEqualTo("account_number", destinyAccount)
-            .limit(1)
-            .get()
-            .await()
-        if (query.isEmpty) throw Exception("No existe usuario con esa cuenta.")
-        val userDestino = query.documents[0]
-        val uidDestino = userDestino.id
-        val isAdmin = userDestino.getBoolean("is_admin") ?: false
-        if (isAdmin) throw Exception("No puedes depositar a un usuario administrador.")
-        if (uidDestino == getCurrentUserUid()) throw Exception("No puedes depositar a tu propia cuenta.")
 
         db.runTransaction { transaction ->
             val userSnapshot =
@@ -104,10 +116,10 @@ object FirebaseAuthManager {
                 nuevoBalance
             )
 
-            val depositoRef = db.collection("deposit_data").document()
+            val depositReference = db.collection("deposit_data").document()
             transaction.set(
-                depositoRef, mapOf(
-                    "uid" to uidDestino,
+                depositReference, mapOf(
+                    "uid" to getCurrentUserUid(),
                     "amount" to amount,
                     "date" to com.google.firebase.Timestamp.now(),
                     "is_validated" to false,

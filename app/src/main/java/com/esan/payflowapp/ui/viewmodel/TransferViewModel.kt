@@ -17,13 +17,13 @@ import com.esan.payflowapp.ui.viewmodel.LoginViewModel.LoginState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class DepositViewModel : ViewModel() {
+class TransferViewModel : ViewModel() {
 
     private var _balance = MutableLiveData<Double>()
     val balance: LiveData<Double> get() = _balance
 
-    private var _state = MutableLiveData<DepositState>(DepositState.Idle)
-    val state: LiveData<DepositState> get() = _state
+    private var _state = MutableLiveData<TransferState>(TransferState.Idle)
+    val state: LiveData<TransferState> get() = _state
 
     fun getData(context: Context) = viewModelScope.launch(Dispatchers.IO) {
         runCatching {
@@ -38,34 +38,35 @@ class DepositViewModel : ViewModel() {
         }
     }
 
-    fun createDeposit(
+    fun transferMoney(
+        destinyAccount: String,
         amount: Double
     ) = viewModelScope.launch(Dispatchers.IO) {
-        _state.postValue(DepositState.Loading)
+        _state.postValue(TransferState.Loading)
         runCatching {
-            FirebaseAuthManager.createDeposit(amount)
+            FirebaseAuthManager.transferMoney(destinyAccount, amount)
         }.onSuccess {
-            _state.postValue(DepositState.Success)
+            _state.postValue(TransferState.Success)
         }.onFailure {
             it.printStackTrace()
-            _state.postValue(DepositState.Fail(message = it.message ?: it.localizedMessage))
+            _state.postValue(TransferState.Fail(message = it.message ?: it.localizedMessage))
         }
     }
 
-    sealed class DepositState {
-        object Idle : DepositState()
-        object Loading : DepositState()
-        object Success : DepositState()
-        class Fail(val message: String) : DepositState()
+    sealed class TransferState {
+        object Idle : TransferState()
+        object Loading : TransferState()
+        object Success : TransferState()
+        class Fail(val message: String) : TransferState()
     }
 
 }
 
-class DepositViewModelFactory() : ViewModelProvider.Factory {
+class TransferViewModelFactory() : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(DepositViewModel::class.java)) {
+        if (modelClass.isAssignableFrom(TransferViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return DepositViewModel() as T
+            return TransferViewModel() as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
