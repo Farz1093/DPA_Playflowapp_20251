@@ -95,7 +95,7 @@ fun DepositValidationScreen(
                         if (userIds.isEmpty()) {
                             // Si no hay IDs, mostramos las transacciones sin nombre.
                             pendingListWithUsers = transactions.map { TransactionWithUser(it, "ID de usuario vacío") }
-                                //.sortedByDescending { it.transaction.createdAt }
+                                .sortedByDescending { it.transaction.createdAt }
                             isLoading = false
                             return@launch
                         }
@@ -107,7 +107,7 @@ fun DepositValidationScreen(
                             .await()
 
                         val usersMap = usersSnapshot.documents.associate { document ->
-                            document.id to document.toObject(UserEntity::class.java)
+                            document.id to document.toObject(UserProfile::class.java)
                         }
 
                         // 4. Combinamos los datos y actualizamos la UI.
@@ -126,7 +126,7 @@ fun DepositValidationScreen(
 
                         // Como fallback, mostramos la lista sin nombres.
                         pendingListWithUsers = transactions.map { TransactionWithUser(it, "Error al cargar nombre") }
-                            //.sortedByDescending { it.transaction.createdAt }
+                            .sortedByDescending { it.transaction.createdAt }
                         isLoading = false
                     }
                 }

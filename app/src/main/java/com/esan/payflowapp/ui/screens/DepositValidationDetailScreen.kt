@@ -83,12 +83,25 @@ fun DepositValidationDetailScreen(
                 ValidationUiState.Loading -> CircularProgressIndicator()
                 is ValidationUiState.Error -> Text(state.message, color = MaterialTheme.colorScheme.error)
                 is ValidationUiState.Loaded -> {
-
+                    ValidationContent(
+                        txWithUser = state.txWithUser,
+                        onApprove = { vm.requestAction(Action.APPROVE) },
+                        onReject = { vm.requestAction(Action.REJECT) }
+                    )
                 }
                 is ValidationUiState.Confirming -> {
                     // El diálogo se muestra sobre el contenido anterior
-
-
+                    ValidationContent(
+                        txWithUser = state.txWithUser,
+                        onApprove = {},
+                        onReject = {}
+                    )
+                    ConfirmDialog(
+                        txWithUser = state.txWithUser,
+                        action = state.action,
+                        onConfirm = { vm.performAction(state.action) },
+                        onCancel = { vm.load() }
+                    )
                 }
                 ValidationUiState.Success -> {
                     SuccessAnimation {
