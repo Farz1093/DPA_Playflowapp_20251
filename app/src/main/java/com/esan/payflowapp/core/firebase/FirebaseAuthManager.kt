@@ -72,41 +72,84 @@ object FirebaseAuthManager {
         }
     }
 
+    suspend fun createDeposit(
+        destinyAccount: String,
+        amount: Double
+    ): Boolean {
+        val userDoc = db.collection("user_data").document(getCurrentUserUid()).get().await()
+        val balance = userDoc.getDouble("balance") ?: 0.0
+        if (amount > balance) throw Exception("Saldo insuficiente.")
+        if (amount <= 0) throw Exception("El monto debe ser mayor a 0.")
+
+        val query = db.collection("user_data")
+            .whereEqualTo("account_number", destinyAccount)
+            .limit(1)
+            .get()
+            .await()
+        if (query.isEmpty) throw Exception("No existe usuario con esa cuenta.")
+        val userDestino = query.documents[0]
+        val uidDestino = userDestino.id
+        val isAdmin = userDestino.getBoolean("is_admin") ?: false
+        if (isAdmin) throw Exception("No puedes depositar a un usuario administrador.")
+        if (uidDestino == getCurrentUserUid()) throw Exception("No puedes depositar a tu propia cuenta.")
+
+        db.runTransaction { transaction ->
+            val userSnapshot =
+                transaction.get(db.collection("user_data").document(getCurrentUserUid()))
+            val nuevoBalance = (userSnapshot.getDouble("balance") ?: 0.0) - amount
+            if (nuevoBalance < 0) throw Exception("Saldo insuficiente en el momento de la transacción")
+            transaction.update(
+                db.collection("user_data").document(getCurrentUserUid()),
+                "balance",
+                nuevoBalance
+            )
+
+            val depositoRef = db.collection("deposit_data").document()
+            transaction.set(
+                depositoRef, mapOf(
+                    "uid" to uidDestino,
+                    "amount" to amount,
+                    "date" to com.google.firebase.Timestamp.now(),
+                    "is_validated" to false,
+                    "is_approved" to false
+                )
+            )
+        }.await()
+
+        return true
+    }
+
     suspend fun listUsers(): List<Pair<String, String>> {
-        val fromUid = auth.currentUser?.uid.orEmpty()
         val users = db.collection("user_data")
             .whereEqualTo("is_admin", false)
             .get()
             .await()
 
         return users.documents
-            .filter { it.id != fromUid }
+            .filter { it.id != getCurrentUserUid() }
             .map { it.id to (it.getString("name") ?: "Sin nombre") }
     }
 
     suspend fun getBalance(): Double {
-        val fromUid = auth.currentUser?.uid.orEmpty()
-        val doc = db.collection("user_data").document(fromUid).get().await()
+        val doc = db.collection("user_data").document(getCurrentUserUid()).get().await()
         return doc.getDouble("balance") ?: 0.0
     }
 
     suspend fun getLastTrx(): List<Transaction> {
-        val fromUid = auth.currentUser?.uid.orEmpty()
-
         val depositQuery = db.collection("deposit_data")
-            .whereEqualTo("uid", fromUid)
+            .whereEqualTo("uid", getCurrentUserUid())
             .orderBy("date", Query.Direction.DESCENDING)
             .limit(5)
             .get()
             .await()
         val trxQueryFrom = db.collection("trx_data")
-            .whereEqualTo("from_uid", fromUid)
+            .whereEqualTo("from_uid", getCurrentUserUid())
             .orderBy("date", Query.Direction.DESCENDING)
             .limit(5)
             .get()
             .await()
         val trxQueryTo = db.collection("trx_data")
-            .whereEqualTo("to_uid", fromUid)
+            .whereEqualTo("to_uid", getCurrentUserUid())
             .orderBy("date", Query.Direction.DESCENDING)
             .limit(5)
             .get()
@@ -153,8 +196,8 @@ object FirebaseAuthManager {
         auth.signOut()
     }
 
-    fun getCurrentUserUid(): String? {
-        return auth.currentUser?.uid
+    fun getCurrentUserUid(): String {
+        return auth.currentUser?.uid.orEmpty()
     }
 
 }

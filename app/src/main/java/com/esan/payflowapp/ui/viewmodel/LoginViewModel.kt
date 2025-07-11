@@ -23,7 +23,7 @@ class LoginViewModel : ViewModel() {
 
     private fun validateLogin() {
         _state.value = LoginState.Loading
-        if (FirebaseAuthManager.getCurrentUserUid() != null) {
+        if (FirebaseAuthManager.getCurrentUserUid().isNotEmpty()) {
             _state.value = LoginState.Success
         } else {
             _state.value = LoginState.Idle
