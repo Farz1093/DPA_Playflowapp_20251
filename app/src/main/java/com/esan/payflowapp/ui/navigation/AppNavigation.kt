@@ -49,8 +49,7 @@ fun AppNavigation() {
             DrawerScaffold(title = "Depósitos Pendientes", navController = navController) {
                 // Esta pantalla lista todos los pendientes y navega al detalle
                 DepositValidationScreen(
-                    navController = navController,
-                    repo          = txRepo
+                    navController = navController
                 )
             }
         }

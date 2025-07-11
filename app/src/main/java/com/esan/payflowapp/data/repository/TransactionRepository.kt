@@ -7,7 +7,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.tasks.await
-
+import kotlinx.coroutines.tasks.await
 
 class TransactionRepository(
 
@@ -18,20 +18,12 @@ class TransactionRepository(
     /** Crea un depósito local y Firestore lo recogerá por el SyncWorker */
     suspend fun deposit(tx: TransactionEntity): Result<Unit> {
         return try {
-            val uid = FirebaseAuthManager.getCurrentUserUid()!!
 
-            // Prepara timestamps
-            val now = System.currentTimeMillis()
-            val data = tx.copy(
-                userId    = uid,
-                createdAt = now,
-                updatedAt = now
-            )
 
             // Escribe en Firestore
             firestore.collection("transactions")
-                .document(data.id)
-                .set(data)   // Firestore mapea automáticamente el data class
+                .document(tx.id)
+                .set(tx)   // Firestore mapea automáticamente el data class
                 .await()
 
             Result.success(Unit)

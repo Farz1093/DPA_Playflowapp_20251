@@ -46,8 +46,7 @@ class DepositViewModel(
                     type       = "DEPOSIT",
                     amount     = amt,
                     status     = "PENDING",
-                    createdAt  = System.currentTimeMillis(),
-                    timestamp = Timestamp.now()
+                    createdAt  = System.currentTimeMillis()
                 )
                 repo.deposit(tx)
                 _error.value = null

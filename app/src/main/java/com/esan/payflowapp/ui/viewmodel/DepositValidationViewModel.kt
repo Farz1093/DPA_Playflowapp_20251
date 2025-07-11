@@ -3,6 +3,7 @@ package com.esan.payflowapp.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.esan.payflowapp.core.firebase.models.TransactionWithUser
 import com.esan.payflowapp.data.local.entities.TransactionEntity
 import com.esan.payflowapp.data.repository.TransactionRepository
 import com.google.firebase.firestore.FirebaseFirestore
@@ -10,6 +11,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import com.google.firebase.firestore.FieldPath
+import kotlinx.coroutines.async
 
 class DepositValidationViewModel(
     private val txId: String,
@@ -24,13 +27,22 @@ class DepositValidationViewModel(
     fun load() = viewModelScope.launch {
         _uiState.value = ValidationUiState.Loading
         try {
-            val snap = fs.collection("transactions")
-                .document(txId)
-                .get()
-                .await()
-            val tx = snap.toObject(TransactionEntity::class.java)
-                ?: throw IllegalStateException("Transacción no encontrada")
-            _uiState.value = ValidationUiState.Loaded(tx)
+            // Paso 1: Obtener la transacción
+            val txSnap = fs.collection("transactions").document(txId).get().await()
+            val tx = txSnap.toObject(TransactionEntity::class.java)
+                ?: throw IllegalStateException("Transacción no encontrada con ID: $txId")
+
+            // Paso 2: Obtener el nombre del usuario en paralelo
+            val userNameDeferred = async {
+                val userSnap = fs.collection("users").document(tx.userId).get().await()
+                userSnap.getString("name") ?: "Usuario Desconocido"
+            }
+
+            val userName = userNameDeferred.await()
+
+            // Paso 3: Combinar y actualizar el estado
+            //_uiState.value = ValidationUiState.Loaded(TransactionWithUser(tx, userName))
+
         } catch (e: Exception) {
             _uiState.value = ValidationUiState.Error(e.localizedMessage ?: "Error desconocido")
         }
@@ -57,9 +69,7 @@ class DepositValidationViewModel(
     }
 }
 
-/**
- * Factory para crear el ViewModel con parámetros (txId y repo).
- */
+
 class DepositValidationViewModelFactory(
     private val txId: String,
     private val repo: TransactionRepository
