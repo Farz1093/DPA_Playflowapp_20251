@@ -31,7 +31,9 @@ fun AppNavigation() {
         //SOLO ADMIN
         composable("deposit-validation") {
             DrawerScaffold(title = "Validación de depósito", navController = navController) {
-                DepositValidationScreen()
+                DepositValidationScreen(
+                    navController = navController
+                )
             }
         }
         composable("transfer") {
