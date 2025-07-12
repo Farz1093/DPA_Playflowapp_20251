@@ -39,6 +39,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.esan.payflowapp.R
 import com.esan.payflowapp.core.utils.toTwoDecimal
+import com.esan.payflowapp.ui.model.GeneralState
 import com.esan.payflowapp.ui.viewmodel.TransferViewModel
 import com.esan.payflowapp.ui.viewmodel.TransferViewModelFactory
 
@@ -60,13 +61,13 @@ fun TransferScreen(
     }
 
     LaunchedEffect(state) {
-        if (state is TransferViewModel.TransferState.Success) {
+        if (state is GeneralState.Success) {
             Toast.makeText(context, "Transferencia realizada", Toast.LENGTH_SHORT).show()
             navController.popBackStack()
-        } else if (state is TransferViewModel.TransferState.Fail) {
+        } else if (state is GeneralState.Fail) {
             Toast.makeText(
                 context,
-                (state as TransferViewModel.TransferState.Fail).message,
+                (state as GeneralState.Fail).message,
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -146,13 +147,16 @@ fun TransferScreen(
                 }
             }
 
-            if (state == TransferViewModel.TransferState.Loading) {
+            if (state == GeneralState.Loading) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.White)
-                        .alpha(0.25f)
                 ) {
+                    Box(
+                        Modifier
+                            .matchParentSize()
+                            .background(Color.White.copy(alpha = 0.25f))
+                    )
                     CircularProgressIndicator(
                         modifier = Modifier
                             .padding(25.dp)

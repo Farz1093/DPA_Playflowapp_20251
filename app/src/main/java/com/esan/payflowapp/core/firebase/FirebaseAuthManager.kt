@@ -5,13 +5,15 @@ import android.content.Context
 import android.util.Log
 import com.esan.payflowapp.core.firebase.model.Transaction
 import com.esan.payflowapp.core.firebase.model.UserData
+import com.esan.payflowapp.core.pref.SharedPreferencesManager
+import com.google.firebase.Timestamp
 import com.esan.payflowapp.core.notifications.AdminNotificationsManager
 import com.esan.payflowapp.core.notifications.UserNotificationsManager
-import com.esan.payflowapp.core.pref.SharedPreferencesManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
+import java.util.Date
 import java.util.UUID
 
 object FirebaseAuthManager {
@@ -22,7 +24,8 @@ object FirebaseAuthManager {
     private val db = FirebaseFirestore.getInstance()
 
     //Login
-    suspend fun loginUser(email: String, password: String): Result<Unit> { return try {
+    suspend fun loginUser(email: String, password: String): Result<Unit> {
+        return try {
             val authResult = auth.signInWithEmailAndPassword(email, password).await()
             Result.success(Unit)
         } catch (e: Exception) {
@@ -112,20 +115,20 @@ object FirebaseAuthManager {
             val depositReference = db.collection("deposit_data").document()
             transaction.set(
                 depositReference, mapOf(
-                    "id"         to UUID.randomUUID().toString(),
+                    "id" to UUID.randomUUID().toString(),
                     "uid" to getCurrentUserUid(),
                     "amount" to amount,
-                    "date" to com.google.firebase.Timestamp.now(),
+                    "date" to Timestamp.now(),
                     "is_validated" to false,
                     "is_approved" to false,
                     // NUEVOS CAMPOS
                     "type" to "DEPOSIT",
-                    "status"       to "PENDING",
-                    "createdAt"    to System.currentTimeMillis(), // o usa tu propio valor
-                    "currency"     to "PEN",
-                    "updatedAt"    to null,
-                    "validatedBy"  to null,
-                    "validatedAt"  to null
+                    "status" to "PENDING",
+                    "createdAt" to System.currentTimeMillis(), // o usa tu propio valor
+                    "currency" to "PEN",
+                    "updatedAt" to null,
+                    "validatedBy" to null,
+                    "validatedAt" to null
                 )
             )
         }.await()
@@ -215,6 +218,86 @@ object FirebaseAuthManager {
             UserNotificationsManager.stopListening()
         }
         auth.signOut()
+        SharedPreferencesManager.clearData(context)
+    }
+
+    suspend fun getTransactionHistory(
+        from: Long,
+        to: Long
+    ): List<Transaction> {
+        val uid = getCurrentUserUid()
+
+        Log.e("WAA", "getTransactionHistory-from=$from")
+        Log.e("WAA", "getTransactionHistory-to=$to")
+
+        val fromTimeStamp = Timestamp(Date(from))
+        val toTimeStamp = Timestamp(Date(to))
+
+        Log.e("WAA", "getTransactionHistory-fromTimeStamp=$fromTimeStamp")
+        Log.e("WAA", "getTransactionHistory-toTimeStamp=$toTimeStamp")
+
+        val ancientDate = Timestamp(Date(0)) // 1 de enero 1970
+        val futureDate =
+            Timestamp(Date(System.currentTimeMillis() + 100L * 365 * 24 * 60 * 60 * 1000)) // 100 años al futuro
+
+        Log.e("WAA", "getTransactionHistory-ancientDate=$ancientDate")
+        Log.e("WAA", "getTransactionHistory-futureDate=$futureDate")
+
+        val depositQuery = db.collection("deposit_data")
+            .whereEqualTo("uid", uid)
+            .whereGreaterThanOrEqualTo("date", fromTimeStamp)
+            .whereLessThanOrEqualTo("date", toTimeStamp)
+//            .whereGreaterThanOrEqualTo("date", ancientDate)
+//            .whereLessThanOrEqualTo("date", futureDate)
+            .get()
+            .await()
+
+        val sentQuery = db.collection("trx_data")
+            .whereEqualTo("from_uid", uid)
+            .whereGreaterThanOrEqualTo("date", fromTimeStamp)
+            .whereLessThanOrEqualTo("date", toTimeStamp)
+            .get()
+            .await()
+
+        val receivedQuery = db.collection("trx_data")
+            .whereEqualTo("to_uid", uid)
+            .whereGreaterThanOrEqualTo("date", fromTimeStamp)
+            .whereLessThanOrEqualTo("date", toTimeStamp)
+            .get()
+            .await()
+
+        val depositList = depositQuery.documents.map {
+            Transaction(
+                type = "deposit",
+                isValidated = it.getBoolean("is_validated") ?: false,
+                isApproved = it.getBoolean("is_approved") ?: false,
+                amount = it.getDouble("amount") ?: 0.0,
+                date = it.getTimestamp("date")?.toDate()?.time ?: 0L
+            )
+        }
+        val transferSentList = sentQuery.documents.map {
+            Transaction(
+                type = "transfer_sent",
+                isValidated = true, // Puedes omitir si tu modelo no lo usa para transferencias
+                isApproved = true,
+                amount = it.getDouble("amount") ?: 0.0,
+                date = it.getTimestamp("date")?.toDate()?.time ?: 0L
+            )
+        }
+        val transferReceivedList = receivedQuery.documents.map {
+            Transaction(
+                type = "transfer_received",
+                isValidated = true,
+                isApproved = true,
+                amount = it.getDouble("amount") ?: 0.0,
+                date = it.getTimestamp("date")?.toDate()?.time ?: 0L
+            )
+        }
+        Log.e("WAA", "getTransactionHistory-depositList=${depositList.size}")
+        Log.e("WAA", "getTransactionHistory-transferSentList=${transferSentList.size}")
+        Log.e("WAA", "getTransactionHistory-transferReceivedList=${transferReceivedList.size}")
+
+        return (depositList + transferSentList + transferReceivedList).sortedByDescending { it.date }
     }
 
     fun getCurrentUserUid(): String {
@@ -223,40 +306,44 @@ object FirebaseAuthManager {
 
     suspend fun validateDeposit(txId: String, approve: Boolean): Result<Unit> {
         return try {
-
             val adminUid = getCurrentUserUid()
             if (adminUid.isEmpty()) {
                 throw IllegalStateException("Administrador no autenticado.")
             }
-
-
-            val newStatus = if (approve) "COMPLETED" else "FAILED"
             val now = System.currentTimeMillis()
 
+            db.runTransaction { transaction ->
+                val depositRef = db.collection("deposit_data").document(txId)
+                val depositSnap = transaction.get(depositRef)
 
-            val updates = mapOf(
-                "status"       to newStatus,
-                "is_approved"  to approve,
-                "is_validated" to true,
-                "validatedBy"  to adminUid,
-                "validatedAt"  to now,
-                "updatedAt"    to now
-            )
+                if (!depositSnap.exists()) throw IllegalStateException("Depósito no encontrado.")
+                if (depositSnap.getBoolean("is_validated") == true) throw IllegalStateException("Depósito ya validado.")
 
+                val updates = mapOf(
+                    "status" to if (approve) "COMPLETED" else "FAILED",
+                    "is_approved" to approve,
+                    "is_validated" to true,
+                    "validatedBy" to adminUid,
+                    "validatedAt" to now,
+                    "updatedAt" to now
+                )
+                transaction.update(depositRef, updates)
 
-            db.collection("deposit_data")
-                .document(txId)
-                .update(updates)
-                .await()
+                if (approve) {
+                    val amount = depositSnap.getDouble("amount") ?: 0.0
+                    val userUid = depositSnap.getString("uid") ?: throw IllegalStateException("uid no encontrado en depósito.")
+                    val userRef = db.collection("user_data").document(userUid)
+                    val userSnap = transaction.get(userRef)
+                    if (!userSnap.exists()) throw IllegalStateException("Usuario no encontrado.")
+                    val prevBalance = userSnap.getDouble("balance") ?: 0.0
+                    transaction.update(userRef, "balance", prevBalance + amount)
+                }
+            }.await()
 
-            // Si todo fue bien, devolvemos un resultado de éxito.
             Result.success(Unit)
-
         } catch (e: Exception) {
-
             Log.e("AuthManager", "Error al validar depósito $txId", e)
             Result.failure(e)
         }
     }
-
 }

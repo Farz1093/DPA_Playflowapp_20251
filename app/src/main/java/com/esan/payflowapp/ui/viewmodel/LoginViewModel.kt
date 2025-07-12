@@ -10,33 +10,31 @@ import com.esan.payflowapp.core.firebase.FirebaseAuthManager
 import com.esan.payflowapp.core.notifications.AdminNotificationsManager
 import com.esan.payflowapp.core.notifications.UserNotificationsManager
 import com.esan.payflowapp.core.pref.SharedPreferencesManager
+import com.esan.payflowapp.ui.model.GeneralState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 
 class LoginViewModel : ViewModel() {
 
-    private var _state = MutableLiveData<LoginState>(LoginState.Loading)
-    val state: LiveData<LoginState> get() = _state
+    private var _state = MutableLiveData<GeneralState>(GeneralState.Loading)
+    val state: LiveData<GeneralState> get() = _state
 
     init {
         validateLogin()
     }
 
     private fun validateLogin() {
-        _state.value = LoginState.Loading
+        _state.value = GeneralState.Loading
         if (FirebaseAuthManager.getCurrentUserUid().isNotEmpty()) {
-            _state.value = LoginState.Success
+            _state.value = GeneralState.Success
         } else {
-            _state.value = LoginState.Idle
+            _state.value = GeneralState.Idle
         }
     }
 
     fun doLogin(context: Context, email: String, password: String) = viewModelScope.launch(Dispatchers.IO) {
-
-
-        _state.postValue(LoginState.Loading)
-
+        _state.postValue(GeneralState.Loading)
         try {
             val result = FirebaseAuthManager.loginUser(email, password)
             if (result.isSuccess) {
@@ -54,23 +52,15 @@ class LoginViewModel : ViewModel() {
                     UserNotificationsManager.startListeningForDepositUpdates(context)
                 }
 
-                _state.postValue(LoginState.Success)
+                _state.postValue(GeneralState.Success)
             } else {
-                _state.postValue(LoginState.Fail(result.exceptionOrNull()?.localizedMessage.orEmpty()))
+                _state.postValue(GeneralState.Fail(result.exceptionOrNull()?.localizedMessage.orEmpty()))
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            _state.postValue(LoginState.Fail(e.localizedMessage.orEmpty()))
+            _state.postValue(GeneralState.Fail(e.localizedMessage.orEmpty()))
         }
     }
-
-    sealed class LoginState {
-        object Idle : LoginState()
-        object Loading : LoginState()
-        object Success : LoginState()
-        class Fail(val message: String) : LoginState()
-    }
-
 
 }
 

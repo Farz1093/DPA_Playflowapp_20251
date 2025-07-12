@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.esan.payflowapp.R
+import com.esan.payflowapp.ui.model.GeneralState
 import com.esan.payflowapp.ui.viewmodel.LoginViewModel
 import com.esan.payflowapp.ui.viewmodel.LoginViewModelFactory
 
@@ -62,10 +63,10 @@ fun LoginScreen(
     }
 
     LaunchedEffect(state) {
-        if (state is LoginViewModel.LoginState.Success) {
+        if (state is GeneralState.Success) {
             navController.navigate("home")
-        } else if (state is LoginViewModel.LoginState.Fail) {
-            Toast.makeText(context, (state as LoginViewModel.LoginState.Fail).message, Toast.LENGTH_SHORT).show()
+        } else if (state is GeneralState.Fail) {
+            Toast.makeText(context, (state as GeneralState.Fail).message, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -125,13 +126,16 @@ fun LoginScreen(
             }
         }
 
-        if (state == LoginViewModel.LoginState.Loading) {
+        if (state == GeneralState.Loading) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.White)
-                    .alpha(0.5f)
             ) {
+                Box(
+                    Modifier
+                        .matchParentSize()
+                        .background(Color.White.copy(alpha = 0.25f))
+                )
                 CircularProgressIndicator(
                     modifier = Modifier
                         .padding(25.dp)

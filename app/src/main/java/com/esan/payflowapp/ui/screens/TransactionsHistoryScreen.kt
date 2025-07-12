@@ -1,5 +1,8 @@
 package com.esan.payflowapp.ui.screens
 
+import android.app.DatePickerDialog
+import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,27 +12,76 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.esan.payflowapp.R
+import com.esan.payflowapp.core.firebase.model.Transaction
+import com.esan.payflowapp.core.utils.toTwoDecimal
+import com.esan.payflowapp.ui.model.GeneralState
+import com.esan.payflowapp.ui.viewmodel.DepositViewModel
+import com.esan.payflowapp.ui.viewmodel.HistoryTrxViewModel
+import com.esan.payflowapp.ui.viewmodel.HistoryTrxViewModelFactory
+import com.esan.payflowapp.ui.viewmodel.HomeViewModelFactory
+import com.esan.payflowapp.ui.viewmodel.RangeFilter
 import com.esan.payflowapp.ui.views.TransactionRowView
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 @Composable
-fun TransactionsHistoryScreen(modifier: Modifier = Modifier) {
+fun TransactionsHistoryScreen(
+    viewModel: HistoryTrxViewModel = viewModel(factory = HistoryTrxViewModelFactory())
+) {
+    val context = LocalContext.current
+    val trxList by viewModel.trxList.observeAsState(emptyList())
+    val state by viewModel.state.observeAsState()
+    var filter by remember { mutableStateOf(RangeFilter.TODAY) }
+    var customFrom by remember { mutableStateOf<Long?>(null) }
+    var customTo by remember { mutableStateOf<Long?>(null) }
+
+    LaunchedEffect(filter, customTo, customFrom) {
+        viewModel.getHistory(filter, customFrom, customTo)
+    }
+
+    LaunchedEffect(state) {
+        if (state is GeneralState.Fail) {
+            Toast.makeText(
+                context,
+                (state as GeneralState.Fail).message,
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
     Box {
         Column(
             modifier = Modifier
@@ -39,12 +91,114 @@ fun TransactionsHistoryScreen(modifier: Modifier = Modifier) {
             verticalArrangement = Arrangement.Top
         ) {
             Spacer(Modifier.height(25.dp))
-//            LazyColumn {
-//                items(count = 10) {
-//                    TransactionRowView()
-//                }
-//            }
+            Row {
+                Button(
+                    onClick = { filter = RangeFilter.TODAY },
+                    colors = if (filter == RangeFilter.TODAY) ButtonDefaults.buttonColors()
+                    else ButtonDefaults.buttonColors(containerColor = Color.Gray)
+                ) { Text("Hoy") }
+
+                Spacer(Modifier.width(8.dp))
+                Button(
+                    onClick = { filter = RangeFilter.WEEK },
+                    colors = if (filter == RangeFilter.WEEK) ButtonDefaults.buttonColors()
+                    else ButtonDefaults.buttonColors(containerColor = Color.Gray)
+                ) { Text("Última semana") }
+
+                Spacer(Modifier.width(8.dp))
+                Button(
+                    onClick = { filter = RangeFilter.RANGE },
+                    colors = if (filter == RangeFilter.RANGE) ButtonDefaults.buttonColors()
+                    else ButtonDefaults.buttonColors(containerColor = Color.Gray)
+                ) {
+                    Text("Rango")
+                }
+            }
+            if (filter == RangeFilter.RANGE) {
+                Spacer(Modifier.height(8.dp))
+                Row {
+                    DatePickerButton("Desde", customFrom) { customFrom = it }
+                    Spacer(Modifier.width(8.dp))
+                    DatePickerButton("Hasta", customTo) { customTo = it }
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            if (trxList.isEmpty()) {
+                Text("No hay transacciones en el periodo seleccionado.")
+            } else {
+                LazyColumn {
+                    items(trxList) { trx ->
+                        Card(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor =
+                                    if (trx.type == "deposit") Color(0xFFFFF9C4)
+                                    else if (trx.type == "transfer_sent") Color(0xFFE3F2FD)
+                                    else Color(0xFFC8E6C9)
+                            )
+                        ) {
+                            Column(Modifier.padding(12.dp)) {
+                                Text(trx.getTrxType(), fontWeight = FontWeight.Bold)
+                                Text("Monto: ${trx.amount.toTwoDecimal()}")
+                                if (trx.isDeposit())
+                                    Text("Estado: ${trx.getDepositStatus()}")
+                                Text(
+                                    text = "Fecha: ${
+                                        SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+                                            .format(Date(trx.date))
+                                    }",
+                                    fontSize = 12.sp,
+                                    color = Color.Gray
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
+        if (state == GeneralState.Loading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                Box(
+                    Modifier
+                        .matchParentSize()
+                        .background(Color.White.copy(alpha = 0.25f))
+                )
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .padding(25.dp)
+                        .align(Alignment.Center)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun DatePickerButton(label: String, value: Long?, onDateSelected: (Long) -> Unit) {
+    val context = LocalContext.current
+    val cal = Calendar.getInstance()
+    if (value != null) cal.timeInMillis = value
+    val datePickerDialog = remember {
+        DatePickerDialog(context, { _, y, m, d ->
+            val selectedCal = Calendar.getInstance()
+            selectedCal.set(y, m, d, 0, 0, 0)
+            selectedCal.set(Calendar.MILLISECOND, 0)
+            onDateSelected(selectedCal.timeInMillis)
+        }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH))
+    }
+    OutlinedButton(onClick = { datePickerDialog.show() }) {
+        Text(
+            "$label: " + if (value != null) SimpleDateFormat(
+                "dd/MM/yyyy", Locale("es", "PE")
+            ).format(Date(value)) else "--/--/----"
+        )
     }
 }
 
