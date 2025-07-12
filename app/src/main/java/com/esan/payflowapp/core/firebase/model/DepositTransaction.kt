@@ -5,7 +5,7 @@ import com.google.firebase.firestore.PropertyName
 
 
 data class DepositTransaction(
-    @get:PropertyName("uid") @set:PropertyName("uid")
+
     var uid: String = "",
     var amount: Double = 0.0,
     var date: Timestamp? = null,

@@ -70,5 +70,6 @@ dependencies {
 
     implementation(libs.coil.compose.v260)
     implementation("androidx.compose.material:material-icons-extended")
+    implementation("com.airbnb.android:lottie-compose:6.4.0")
 
 }

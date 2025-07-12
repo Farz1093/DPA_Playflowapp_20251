@@ -28,10 +28,6 @@ class HomeViewModel : ViewModel() {
     private var _balance = MutableLiveData<Double>()
     val balance: LiveData<Double> get() = _balance
 
-    init {
-        loadList()
-    }
-
     fun getUserData(context: Context) = viewModelScope.launch(Dispatchers.IO) {
         val user = FirebaseAuthManager.getUserData()
         SharedPreferencesManager.saveName(context, user.name)
@@ -40,6 +36,7 @@ class HomeViewModel : ViewModel() {
         SharedPreferencesManager.saveIsAdmin(context, user.isAdmin)
 
         _balance.postValue(user.balance)
+        loadList()
     }
 
     private fun loadList() = viewModelScope.launch(Dispatchers.IO) {
