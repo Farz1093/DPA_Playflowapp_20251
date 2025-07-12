@@ -24,6 +24,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.esan.payflowapp.core.firebase.models.TransactionWithUser
@@ -32,7 +33,7 @@ import com.esan.payflowapp.ui.viewmodel.*
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
-
+import kotlinx.coroutines.delay
 // Colores consistentes
 private val DetailLabelColor = Color(0xFF6B7280)
 private val DetailValueColor = Color(0xFF111827)
@@ -80,7 +81,8 @@ fun DepositValidationDetailScreen(
             contentAlignment = Alignment.Center
         ) {
             when (val state = uiState) {
-                ValidationUiState.Loading -> CircularProgressIndicator()
+                ValidationUiState.Loading -> LoadingAnimation()
+                //ValidationUiState.Loading -> CircularProgressIndicator()
                 is ValidationUiState.Error -> Text(state.message, color = MaterialTheme.colorScheme.error)
                 is ValidationUiState.Loaded -> {
                     ValidationContent(
@@ -340,15 +342,54 @@ private fun SuccessAnimation(onEnd: () -> Unit) {
         speed = 1.5f,
         restartOnPlay = false
     )
+
     // Animación centrada
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         LottieAnimation(
             composition = composition,
-            progress    = progress,
+            progress    = { progress }, // Pasando como lambda
             modifier    = Modifier.size(200.dp)
         )
     }
+
+    // --- ESTE ES EL CAMBIO CLAVE ---
+    // Este efecto se lanzará solo una vez cuando la animación se complete.
     if (progress == 1f) {
-        LaunchedEffect(Unit) { onEnd() }
+        LaunchedEffect(Unit) {
+
+            delay(1000)
+            onEnd()
+        }
+    }
+}
+
+@Composable
+private fun LoadingAnimation() {
+
+    val composition by rememberLottieComposition(
+        LottieCompositionSpec.Url("https://assets6.lottiefiles.com/packages/lf20_rZ4c2a.json")
+    )
+    val progress by animateLottieCompositionAsState(
+        composition,
+        iterations = LottieConstants.IterateForever, // Se repite indefinidamente
+        speed = 1.0f
+    )
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        LottieAnimation(
+            composition = composition,
+            progress = { progress },
+            modifier = Modifier.size(250.dp)
+        )
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = "Validando información...",
+            style = MaterialTheme.typography.bodyLarge,
+            color = Color.Gray
+        )
     }
 }

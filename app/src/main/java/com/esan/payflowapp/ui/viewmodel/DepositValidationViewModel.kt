@@ -70,14 +70,14 @@ class DepositValidationViewModel(
         if (current !is ValidationUiState.Confirming) return
 
         viewModelScope.launch {
-            _uiState.value = ValidationUiState.Loading // Muestra el loading mientras se valida
+            _uiState.value = ValidationUiState.Loading
             val result = repo.validateTransaction(current.txWithUser.transaction.id, action == Action.APPROVE)
 
-            // Independientemente del resultado, volvemos a un estado final
+
             if (result.isSuccess) {
                 _uiState.value = ValidationUiState.Success
             } else {
-                // Si falla, volvemos a Loaded y mostramos un error (o un estado de error dedicado)
+
                 val errorMessage = result.exceptionOrNull()?.localizedMessage ?: "No se pudo actualizar"
                 _uiState.value = ValidationUiState.Error(errorMessage)
             }
@@ -86,7 +86,7 @@ class DepositValidationViewModel(
 }
 
 
-// --- Factory (Sin cambios) ---
+
 class DepositValidationViewModelFactory(
     private val txId: String,
     private val repo: TransactionRepository
