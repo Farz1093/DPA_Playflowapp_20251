@@ -307,9 +307,8 @@ object FirebaseAuthManager {
     suspend fun validateDeposit(txId: String, approve: Boolean): Result<Unit> {
         return try {
             val adminUid = getCurrentUserUid()
-            if (adminUid.isEmpty()) {
-                throw IllegalStateException("Administrador no autenticado.")
-            }
+            if (adminUid.isEmpty()) throw IllegalStateException("Administrador no autenticado.")
+
             val now = System.currentTimeMillis()
 
             db.runTransaction { transaction ->
@@ -318,6 +317,17 @@ object FirebaseAuthManager {
 
                 if (!depositSnap.exists()) throw IllegalStateException("Depósito no encontrado.")
                 if (depositSnap.getBoolean("is_validated") == true) throw IllegalStateException("Depósito ya validado.")
+
+                val amount = depositSnap.getDouble("amount") ?: 0.0
+                val userUid = depositSnap.getString("uid") ?: throw IllegalStateException("uid no encontrado en depósito.")
+
+                var prevBalance = 0.0
+                val userRef = db.collection("user_data").document(userUid)
+                if (approve) {
+                    val userSnap = transaction.get(userRef)
+                    if (!userSnap.exists()) throw IllegalStateException("Usuario no encontrado.")
+                    prevBalance = userSnap.getDouble("balance") ?: 0.0
+                }
 
                 val updates = mapOf(
                     "status" to if (approve) "COMPLETED" else "FAILED",
@@ -330,12 +340,6 @@ object FirebaseAuthManager {
                 transaction.update(depositRef, updates)
 
                 if (approve) {
-                    val amount = depositSnap.getDouble("amount") ?: 0.0
-                    val userUid = depositSnap.getString("uid") ?: throw IllegalStateException("uid no encontrado en depósito.")
-                    val userRef = db.collection("user_data").document(userUid)
-                    val userSnap = transaction.get(userRef)
-                    if (!userSnap.exists()) throw IllegalStateException("Usuario no encontrado.")
-                    val prevBalance = userSnap.getDouble("balance") ?: 0.0
                     transaction.update(userRef, "balance", prevBalance + amount)
                 }
             }.await()
