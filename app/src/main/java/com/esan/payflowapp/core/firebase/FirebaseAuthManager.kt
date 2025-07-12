@@ -21,8 +21,7 @@ object FirebaseAuthManager {
     private val db = FirebaseFirestore.getInstance()
 
     //Login
-    suspend fun loginUser(email: String, password: String): Result<Unit> {
-        return try {
+    suspend fun loginUser(email: String, password: String): Result<Unit> { return try {
             val authResult = auth.signInWithEmailAndPassword(email, password).await()
             Result.success(Unit)
         } catch (e: Exception) {
@@ -116,7 +115,15 @@ object FirebaseAuthManager {
                     "amount" to amount,
                     "date" to Timestamp.now(),
                     "is_validated" to false,
-                    "is_approved" to false
+                    "is_approved" to false,
+                    // NUEVOS CAMPOS
+                    "type" to "DEPOSIT",
+                    "status"       to "PENDING",
+                    "createdAt"    to System.currentTimeMillis(), // o usa tu propio valor
+                    "currency"     to "PEN",
+                    "updatedAt"    to null,
+                    "validatedBy"  to null,
+                    "validatedAt"  to null
                 )
             )
         }.await()
