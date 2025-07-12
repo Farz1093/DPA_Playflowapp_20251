@@ -1,9 +1,11 @@
 package com.esan.payflowapp.core.firebase
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.util.Log
 import com.esan.payflowapp.core.firebase.model.Transaction
 import com.esan.payflowapp.core.firebase.model.UserData
+import com.esan.payflowapp.core.pref.SharedPreferencesManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -193,8 +195,67 @@ object FirebaseAuthManager {
             .take(5)
     }
 
-    suspend fun logoutUser() {
+    suspend fun getTransactionHistory(
+        from: Long,
+        to: Long
+    ): List<Transaction> {
+        val uid = getCurrentUserUid()
+
+        Log.e("WAA", "getTransactionHistory-from=$from")
+        Log.e("WAA", "getTransactionHistory-to=$to")
+
+        val depositQuery = db.collection("deposit_data")
+            .whereEqualTo("uid", uid)
+            .whereGreaterThanOrEqualTo("date", from)
+            .whereLessThanOrEqualTo("date", to)
+            .get()
+
+        val sentQuery = db.collection("trx_data")
+            .whereEqualTo("from_uid", uid)
+            .whereGreaterThanOrEqualTo("date", from)
+            .whereLessThanOrEqualTo("date", to)
+            .get()
+
+        val receivedQuery = db.collection("trx_data")
+            .whereEqualTo("to_uid", uid)
+            .whereGreaterThanOrEqualTo("date", from)
+            .whereLessThanOrEqualTo("date", to)
+            .get()
+
+        val depositList = depositQuery.await().documents.map {
+            Transaction(
+                type = "deposit",
+                isValidated = it.getBoolean("is_validated") ?: false,
+                isApproved = it.getBoolean("is_approved") ?: false,
+                amount = it.getDouble("amount") ?: 0.0,
+                date = it.getTimestamp("date")?.toDate()?.time ?: 0L
+            )
+        }
+        val transferSentList = sentQuery.await().documents.map {
+            Transaction(
+                type = "transfer_sent",
+                isValidated = true, // Puedes omitir si tu modelo no lo usa para transferencias
+                isApproved = true,
+                amount = it.getDouble("amount") ?: 0.0,
+                date = it.getTimestamp("date")?.toDate()?.time ?: 0L
+            )
+        }
+        val transferReceivedList = receivedQuery.await().documents.map {
+            Transaction(
+                type = "transfer_received",
+                isValidated = true,
+                isApproved = true,
+                amount = it.getDouble("amount") ?: 0.0,
+                date = it.getTimestamp("date")?.toDate()?.time ?: 0L
+            )
+        }
+
+        return (depositList + transferSentList + transferReceivedList).sortedByDescending { it.date }
+    }
+
+    suspend fun logoutUser(context: Context) {
         auth.signOut()
+        SharedPreferencesManager.clearData(context)
     }
 
     fun getCurrentUserUid(): String {

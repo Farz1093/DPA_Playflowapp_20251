@@ -174,7 +174,7 @@ fun DrawerScaffold(
                     selected = false,
                     onClick = {
                         scope.launch {
-                            FirebaseAuthManager.logoutUser()
+                            FirebaseAuthManager.logoutUser(context)
                             drawerState.close()
                             withContext(Dispatchers.Main) {
                                 navController.navigate("login") {
