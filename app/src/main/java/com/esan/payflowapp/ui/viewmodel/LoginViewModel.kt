@@ -7,6 +7,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.esan.payflowapp.core.firebase.FirebaseAuthManager
+import com.esan.payflowapp.core.notifications.AdminNotificationsManager
+import com.esan.payflowapp.core.notifications.UserNotificationsManager
 import com.esan.payflowapp.core.pref.SharedPreferencesManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -31,7 +33,10 @@ class LoginViewModel : ViewModel() {
     }
 
     fun doLogin(context: Context, email: String, password: String) = viewModelScope.launch(Dispatchers.IO) {
+
+
         _state.postValue(LoginState.Loading)
+
         try {
             val result = FirebaseAuthManager.loginUser(email, password)
             if (result.isSuccess) {
@@ -40,6 +45,14 @@ class LoginViewModel : ViewModel() {
                 SharedPreferencesManager.saveAccountNumber(context, user.accountNumber)
                 SharedPreferencesManager.saveBalance(context, user.balance)
                 SharedPreferencesManager.saveIsAdmin(context, user.isAdmin)
+
+                if (user.isAdmin) {
+                    // Si es admin, inicia el listener para nuevos depósitos pendientes.
+                    AdminNotificationsManager.startListening(context)
+                } else {
+                    // Si es un usuario normal, inicia el listener para el estado de SUS depósitos.
+                    UserNotificationsManager.startListeningForDepositUpdates(context)
+                }
 
                 _state.postValue(LoginState.Success)
             } else {

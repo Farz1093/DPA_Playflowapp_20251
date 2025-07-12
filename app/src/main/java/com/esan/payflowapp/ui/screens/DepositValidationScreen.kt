@@ -1,5 +1,6 @@
 package com.esan.payflowapp.ui.screens
 
+import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -58,7 +59,7 @@ fun DepositValidationScreen(
     LaunchedEffect(Unit) {
         firestore.collection("deposit_data")
             .whereEqualTo("status", "PENDING")
-            .orderBy("createdAt", Query.Direction.DESCENDING)
+            //.orderBy("createdAt", Query.Direction.DESCENDING)
             .addSnapshotListener { transactionSnaps, error ->
                 if (error != null) {
                     isLoading = false
@@ -102,11 +103,12 @@ fun DepositValidationScreen(
                                 userName = usersMap[transaction.uid]?.name ?: "Usuario no encontrado"
                             )
                         }
-
+                        pendingListWithUsers = combinedList.sortedByDescending { it.transaction.createdAt }
                         pendingListWithUsers = combinedList
                         isLoading = false
 
                     } catch (e: Exception) {
+                        Log.e("VALIDATION_SCREEN", "¡FALLO AL PROCESAR DATOS!", e)
                         pendingListWithUsers = transactions.map { TransactionWithUser(it, "Error al cargar nombre") }
                         isLoading = false
                     }

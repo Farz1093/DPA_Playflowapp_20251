@@ -1,13 +1,18 @@
 package com.esan.payflowapp.core.firebase
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.util.Log
 import com.esan.payflowapp.core.firebase.model.Transaction
 import com.esan.payflowapp.core.firebase.model.UserData
+import com.esan.payflowapp.core.notifications.AdminNotificationsManager
+import com.esan.payflowapp.core.notifications.UserNotificationsManager
+import com.esan.payflowapp.core.pref.SharedPreferencesManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
+import java.util.UUID
 
 object FirebaseAuthManager {
 
@@ -107,6 +112,7 @@ object FirebaseAuthManager {
             val depositReference = db.collection("deposit_data").document()
             transaction.set(
                 depositReference, mapOf(
+                    "id"         to UUID.randomUUID().toString(),
                     "uid" to getCurrentUserUid(),
                     "amount" to amount,
                     "date" to com.google.firebase.Timestamp.now(),
@@ -200,12 +206,57 @@ object FirebaseAuthManager {
             .take(5)
     }
 
-    suspend fun logoutUser() {
+    suspend fun logoutUser(context: Context) {
+        val wasAdmin = SharedPreferencesManager.isAdmin(context)
+
+        if (wasAdmin) {
+            AdminNotificationsManager.stopListening()
+        } else {
+            UserNotificationsManager.stopListening()
+        }
         auth.signOut()
     }
 
     fun getCurrentUserUid(): String {
         return auth.currentUser?.uid.orEmpty()
+    }
+
+    suspend fun validateDeposit(txId: String, approve: Boolean): Result<Unit> {
+        return try {
+
+            val adminUid = getCurrentUserUid()
+            if (adminUid.isEmpty()) {
+                throw IllegalStateException("Administrador no autenticado.")
+            }
+
+
+            val newStatus = if (approve) "COMPLETED" else "FAILED"
+            val now = System.currentTimeMillis()
+
+
+            val updates = mapOf(
+                "status"       to newStatus,
+                "is_approved"  to approve,
+                "is_validated" to true,
+                "validatedBy"  to adminUid,
+                "validatedAt"  to now,
+                "updatedAt"    to now
+            )
+
+
+            db.collection("deposit_data")
+                .document(txId)
+                .update(updates)
+                .await()
+
+            // Si todo fue bien, devolvemos un resultado de éxito.
+            Result.success(Unit)
+
+        } catch (e: Exception) {
+
+            Log.e("AuthManager", "Error al validar depósito $txId", e)
+            Result.failure(e)
+        }
     }
 
 }

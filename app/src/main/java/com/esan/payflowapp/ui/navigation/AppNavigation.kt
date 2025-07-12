@@ -4,7 +4,10 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.esan.payflowapp.ui.screens.AdvancedDepositReportScreen
+import com.esan.payflowapp.ui.screens.DepositReportScreen
 import com.esan.payflowapp.ui.screens.DepositScreen
+import com.esan.payflowapp.ui.screens.DepositValidationDetailScreen
 import com.esan.payflowapp.ui.screens.DepositValidationScreen
 import com.esan.payflowapp.ui.screens.HomeScreen
 import com.esan.payflowapp.ui.screens.LoginScreen
@@ -36,6 +39,15 @@ fun AppNavigation() {
                 )
             }
         }
+
+        composable("deposit-validation/{id}") { backStackEntry ->
+            val txId = backStackEntry.arguments?.getString("id") ?: ""
+
+            DepositValidationDetailScreen(
+                txId = txId,
+                navController = navController
+            )
+        }
         composable("transfer") {
             DrawerScaffold(title = "Transferir", navController = navController) {
                 TransferScreen(navController = navController)
@@ -48,8 +60,14 @@ fun AppNavigation() {
         }
         //SOLO ADMIN
         composable("transactions-report") {
-            DrawerScaffold(title = "Reporte de Transacciones", navController = navController) {
-                TransactionsReportScreen()
+            DrawerScaffold(title = "Resumen de Estados", navController = navController) {
+                DepositReportScreen()
+            }
+        }
+
+        composable("transactions-report-advanced") {
+            DrawerScaffold(title = "Análitica de Depósitos", navController = navController) {
+                AdvancedDepositReportScreen()
             }
         }
     }
