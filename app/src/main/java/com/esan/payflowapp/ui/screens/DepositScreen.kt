@@ -49,6 +49,7 @@ import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.esan.payflowapp.R
 import com.esan.payflowapp.core.utils.toTwoDecimal
+import com.esan.payflowapp.ui.model.GeneralState
 import com.esan.payflowapp.ui.viewmodel.DepositViewModel
 import com.esan.payflowapp.ui.viewmodel.DepositViewModelFactory
 import com.esan.payflowapp.ui.viewmodel.LoginViewModel
@@ -78,13 +79,13 @@ fun DepositScreen(
     }
 
     LaunchedEffect(state) {
-        if (state is DepositViewModel.DepositState.Success) {
+        if (state is GeneralState.Success) {
             Toast.makeText(context, "Deposito creado", Toast.LENGTH_SHORT).show()
             navController.popBackStack()
-        } else if (state is DepositViewModel.DepositState.Fail) {
+        } else if (state is GeneralState.Fail) {
             Toast.makeText(
                 context,
-                (state as DepositViewModel.DepositState.Fail).message,
+                (state as GeneralState.Fail).message,
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -169,13 +170,16 @@ fun DepositScreen(
                     Text("Realizar depósito")
                 }
             }
-            if (state == DepositViewModel.DepositState.Loading) {
+            if (state == GeneralState.Loading) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.White)
-                        .alpha(0.25f)
                 ) {
+                    Box(
+                        Modifier
+                            .matchParentSize()
+                            .background(Color.White.copy(alpha = 0.25f))
+                    )
                     CircularProgressIndicator(
                         modifier = Modifier
                             .padding(25.dp)

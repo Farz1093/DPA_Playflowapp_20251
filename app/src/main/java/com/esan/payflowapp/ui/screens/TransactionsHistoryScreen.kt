@@ -1,6 +1,8 @@
 package com.esan.payflowapp.ui.screens
 
 import android.app.DatePickerDialog
+import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +19,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -24,11 +27,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -40,6 +45,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.esan.payflowapp.R
 import com.esan.payflowapp.core.firebase.model.Transaction
 import com.esan.payflowapp.core.utils.toTwoDecimal
+import com.esan.payflowapp.ui.model.GeneralState
+import com.esan.payflowapp.ui.viewmodel.DepositViewModel
 import com.esan.payflowapp.ui.viewmodel.HistoryTrxViewModel
 import com.esan.payflowapp.ui.viewmodel.HistoryTrxViewModelFactory
 import com.esan.payflowapp.ui.viewmodel.HomeViewModelFactory
@@ -54,13 +61,25 @@ import java.util.Locale
 fun TransactionsHistoryScreen(
     viewModel: HistoryTrxViewModel = viewModel(factory = HistoryTrxViewModelFactory())
 ) {
-    var trxList by remember { mutableStateOf<List<Transaction>>(emptyList()) }
+    val context = LocalContext.current
+    val trxList by viewModel.trxList.observeAsState(emptyList())
+    val state by viewModel.state.observeAsState()
     var filter by remember { mutableStateOf(RangeFilter.TODAY) }
     var customFrom by remember { mutableStateOf<Long?>(null) }
     var customTo by remember { mutableStateOf<Long?>(null) }
 
     LaunchedEffect(filter, customTo, customFrom) {
         viewModel.getHistory(filter, customFrom, customTo)
+    }
+
+    LaunchedEffect(state) {
+        if (state is GeneralState.Fail) {
+            Toast.makeText(
+                context,
+                (state as GeneralState.Fail).message,
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
     Box {
@@ -139,6 +158,23 @@ fun TransactionsHistoryScreen(
                         }
                     }
                 }
+            }
+        }
+        if (state == GeneralState.Loading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                Box(
+                    Modifier
+                        .matchParentSize()
+                        .background(Color.White.copy(alpha = 0.25f))
+                )
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .padding(25.dp)
+                        .align(Alignment.Center)
+                )
             }
         }
     }

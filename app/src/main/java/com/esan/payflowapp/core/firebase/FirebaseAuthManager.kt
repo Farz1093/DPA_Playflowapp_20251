@@ -6,10 +6,12 @@ import android.util.Log
 import com.esan.payflowapp.core.firebase.model.Transaction
 import com.esan.payflowapp.core.firebase.model.UserData
 import com.esan.payflowapp.core.pref.SharedPreferencesManager
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
+import java.util.Date
 
 object FirebaseAuthManager {
 
@@ -93,7 +95,7 @@ object FirebaseAuthManager {
                     "to_uid" to toUID,
                     "to_name" to toName,
                     "amount" to amount,
-                    "date" to com.google.firebase.Timestamp.now()
+                    "date" to Timestamp.now()
                 )
             )
         }.await()
@@ -112,7 +114,7 @@ object FirebaseAuthManager {
                 depositReference, mapOf(
                     "uid" to getCurrentUserUid(),
                     "amount" to amount,
-                    "date" to com.google.firebase.Timestamp.now(),
+                    "date" to Timestamp.now(),
                     "is_validated" to false,
                     "is_approved" to false
                 )
@@ -204,25 +206,42 @@ object FirebaseAuthManager {
         Log.e("WAA", "getTransactionHistory-from=$from")
         Log.e("WAA", "getTransactionHistory-to=$to")
 
+        val fromTimeStamp = Timestamp(Date(from))
+        val toTimeStamp = Timestamp(Date(to))
+
+        Log.e("WAA", "getTransactionHistory-fromTimeStamp=$fromTimeStamp")
+        Log.e("WAA", "getTransactionHistory-toTimeStamp=$toTimeStamp")
+
+        val ancientDate = Timestamp(Date(0)) // 1 de enero 1970
+        val futureDate = Timestamp(Date(System.currentTimeMillis() + 100L * 365 * 24 * 60 * 60 * 1000)) // 100 años al futuro
+
+        Log.e("WAA", "getTransactionHistory-ancientDate=$ancientDate")
+        Log.e("WAA", "getTransactionHistory-futureDate=$futureDate")
+
         val depositQuery = db.collection("deposit_data")
             .whereEqualTo("uid", uid)
-            .whereGreaterThanOrEqualTo("date", from)
-            .whereLessThanOrEqualTo("date", to)
+            .whereGreaterThanOrEqualTo("date", fromTimeStamp)
+            .whereLessThanOrEqualTo("date", toTimeStamp)
+//            .whereGreaterThanOrEqualTo("date", ancientDate)
+//            .whereLessThanOrEqualTo("date", futureDate)
             .get()
+            .await()
 
         val sentQuery = db.collection("trx_data")
             .whereEqualTo("from_uid", uid)
-            .whereGreaterThanOrEqualTo("date", from)
-            .whereLessThanOrEqualTo("date", to)
+            .whereGreaterThanOrEqualTo("date", fromTimeStamp)
+            .whereLessThanOrEqualTo("date", toTimeStamp)
             .get()
+            .await()
 
         val receivedQuery = db.collection("trx_data")
             .whereEqualTo("to_uid", uid)
-            .whereGreaterThanOrEqualTo("date", from)
-            .whereLessThanOrEqualTo("date", to)
+            .whereGreaterThanOrEqualTo("date", fromTimeStamp)
+            .whereLessThanOrEqualTo("date", toTimeStamp)
             .get()
+            .await()
 
-        val depositList = depositQuery.await().documents.map {
+        val depositList = depositQuery.documents.map {
             Transaction(
                 type = "deposit",
                 isValidated = it.getBoolean("is_validated") ?: false,
@@ -231,7 +250,7 @@ object FirebaseAuthManager {
                 date = it.getTimestamp("date")?.toDate()?.time ?: 0L
             )
         }
-        val transferSentList = sentQuery.await().documents.map {
+        val transferSentList = sentQuery.documents.map {
             Transaction(
                 type = "transfer_sent",
                 isValidated = true, // Puedes omitir si tu modelo no lo usa para transferencias
@@ -240,7 +259,7 @@ object FirebaseAuthManager {
                 date = it.getTimestamp("date")?.toDate()?.time ?: 0L
             )
         }
-        val transferReceivedList = receivedQuery.await().documents.map {
+        val transferReceivedList = receivedQuery.documents.map {
             Transaction(
                 type = "transfer_received",
                 isValidated = true,
@@ -249,6 +268,9 @@ object FirebaseAuthManager {
                 date = it.getTimestamp("date")?.toDate()?.time ?: 0L
             )
         }
+        Log.e("WAA", "getTransactionHistory-depositList=${depositList.size}")
+        Log.e("WAA", "getTransactionHistory-transferSentList=${transferSentList.size}")
+        Log.e("WAA", "getTransactionHistory-transferReceivedList=${transferReceivedList.size}")
 
         return (depositList + transferSentList + transferReceivedList).sortedByDescending { it.date }
     }
